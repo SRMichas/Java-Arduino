@@ -1,113 +1,113 @@
 package src;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
-import javax.swing.JButton;
-import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import com.panamahitek.ArduinoException;
 import com.panamahitek.PanamaHitek_Arduino;
+import jssc.SerialPortEvent;
+import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
+import javax.swing.JTextArea;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import java.awt.Font;
+import java.awt.FlowLayout;
+import javax.swing.JScrollPane;
+import java.awt.Dimension;
+import javax.swing.JButton;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SpringLayout;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import java.awt.Font;
-import javax.swing.JTabbedPane;
+import net.miginfocom.swing.MigLayout;
 
-public class Ventana extends JFrame implements ActionListener{
+public class Ventana extends JFrame implements ActionListener,SerialPortEventListener{
 	
-	private static final long serialVersionUID = 1L;
-	private JButton bntEnviar;
-	private JLabel lblCaracteres;
-	private JTextArea txaLog;
-	private JTextField txfMensaje;
-	private JTabbedPane tabbedPane;
+	private JTextArea txfMensaje;
+	private JButton btnEnviar;
+	private JLabel lbtxtEnviado;
 	private PanamaHitek_Arduino arduino;
-	
+	private boolean algo = false;
 	public Ventana() {
 		super("Java + Arduino: LCD");
 		setResizable(false);
-		setSize(500,300);
-		setLocationRelativeTo(null);
+		setSize(new Dimension(500, 300));
+		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		init();
+		setLocationRelativeTo(null);
 		try
 		{
 			setDefaultLookAndFeelDecorated(true);
 			setDefaultLookAndFeelDecorated(true);
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-			SwingUtilities.updateComponentTreeUI( this );			
-		}
-		catch ( Exception excepcion ) {	excepcion.printStackTrace();	}
-		setVisible(true);
-	}
-	private void init(){
+			SwingUtilities.updateComponentTreeUI( this );						
+		} catch ( Exception excepcion ) {	excepcion.printStackTrace();	}
 		JPanel panel = new JPanel();
-		panel.setBackground(Color.WHITE);
-		getContentPane().add(panel, BorderLayout.CENTER);
-		SpringLayout sl_panel = new SpringLayout();
-		panel.setLayout(sl_panel);
+		FlowLayout flowLayout = (FlowLayout) panel.getLayout();
+		flowLayout.setAlignment(FlowLayout.LEFT);
+		getContentPane().add(panel, BorderLayout.NORTH);
 		
-		JLabel lbMsg = new JLabel("Texto a ingresar:");
-		lbMsg.setFont(new Font("Tahoma", Font.BOLD, 16));
-		sl_panel.putConstraint(SpringLayout.NORTH, lbMsg, 39, SpringLayout.NORTH, panel);
-		sl_panel.putConstraint(SpringLayout.WEST, lbMsg, 35, SpringLayout.WEST, panel);
-		panel.add(lbMsg);
+		JLabel lblNewLabel = new JLabel("    Texto a ingresar:");
+		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panel.add(lblNewLabel);
 		
-		bntEnviar = new JButton("Enviar");
-		bntEnviar.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		sl_panel.putConstraint(SpringLayout.EAST, bntEnviar, -87, SpringLayout.EAST, panel);
-		bntEnviar.addActionListener(this);
-		
-		txfMensaje = new JTextField();
-		sl_panel.putConstraint(SpringLayout.NORTH, txfMensaje, 19, SpringLayout.SOUTH, lbMsg);
-		sl_panel.putConstraint(SpringLayout.WEST, txfMensaje, 47, SpringLayout.WEST, panel);
-		sl_panel.putConstraint(SpringLayout.EAST, txfMensaje, 429, SpringLayout.WEST, panel);
-		txfMensaje.setFont(new Font("Monospaced", Font.PLAIN, 18));
-		txfMensaje.setDocument(new Docummento());
+		txfMensaje = new JTextArea(new Docummento());
+		txfMensaje.setFont(new Font("Consolas", Font.PLAIN, 16));
+		txfMensaje.setLineWrap(true);
+		txfMensaje.setWrapStyleWord(true);
 		txfMensaje.addKeyListener(new OyeTec());
 		
-		panel.add(txfMensaje);
-		panel.add(bntEnviar);
+		JScrollPane scrollPane = new JScrollPane(txfMensaje);
+		getContentPane().add(scrollPane, BorderLayout.CENTER);
 		
-		lblCaracteres = new JLabel("Caracteres: 0 / 32");
-		sl_panel.putConstraint(SpringLayout.SOUTH, txfMensaje, -32, SpringLayout.NORTH, lblCaracteres);
-		sl_panel.putConstraint(SpringLayout.NORTH, bntEnviar, 1, SpringLayout.NORTH, lblCaracteres);
-		sl_panel.putConstraint(SpringLayout.NORTH, lblCaracteres, 148, SpringLayout.NORTH, panel);
-		sl_panel.putConstraint(SpringLayout.WEST, lblCaracteres, 0, SpringLayout.WEST, lbMsg);
-		lblCaracteres.setFont(new Font("Tahoma", Font.BOLD, 16));
-		panel.add(lblCaracteres);
-			
-		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		tabbedPane.setPreferredSize(new Dimension(0, 120));
-		//getContentPane().add(tabbedPane, BorderLayout.SOUTH);
-	
-		txaLog = new JTextArea();
-		txaLog.setEditable(false);
-		JScrollPane jsp = new JScrollPane(txaLog);
-		tabbedPane.addTab("Log",jsp);
+		JPanel panel_1 = new JPanel();
+		panel_1.setPreferredSize(new Dimension(10, 50));
+		getContentPane().add(panel_1, BorderLayout.SOUTH);
+		panel_1.setLayout(new MigLayout("", "[][][][][][][][grow][][][][][]", "[][][][grow][]"));
 		
+		btnEnviar = new JButton("Enviar");
+		btnEnviar.addActionListener(this);
+		panel_1.add(btnEnviar, "cell 0 1");
+		
+		JLabel lblNewLabel_1 = new JLabel("Estatus -> ");
+		panel_1.add(lblNewLabel_1, "cell 2 1");
+		
+		lbtxtEnviado = new JLabel("Nada que enviar");
+		panel_1.add(lbtxtEnviado, "cell 3 1 3 1,grow");
+		setVisible(true);
 		activa();
 	}
+	private SerialPortEventListener listener = new SerialPortEventListener() {
+		@Override
+		public void serialEvent(SerialPortEvent arg0) {
+			try {
+				if( arduino.isMessageAvailable() && algo){
+					txfMensaje.setEnabled(true);
+					btnEnviar.setEnabled(true);
+					lbtxtEnviado.setText("Texto enviado con exito!!!");
+					algo = false;
+				}
+			} catch (SerialPortException | ArduinoException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				lbtxtEnviado.setText("Fallo al enviar el texto");
+				txfMensaje.setEnabled(true);
+				btnEnviar.setEnabled(true);
+			}
+		}
+	};
 	private void activa(){
 		try {
 			arduino = new PanamaHitek_Arduino();
-            arduino.arduinoTX("COM4", 9600);
+            arduino.arduinoRXTX("COM4", 9600, this);
         } catch (ArduinoException ex) {
             Logger.getLogger(Ventana.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -118,15 +118,21 @@ public class Ventana extends JFrame implements ActionListener{
 		if( mensaje.length() != 0){
 			try {
 				arduino.sendData(mensaje);
+				txfMensaje.setText("");
+				lbtxtEnviado.setText(mensaje);
+				txfMensaje.setEnabled(false);
+				btnEnviar.setEnabled(false);
+				lbtxtEnviado.setText("Enviando texto...");
+				algo = true;
 			} catch (ArduinoException ex){
 				Logger.getLogger(Ventana.class.getName()).log(Level.SEVERE, null, ex);
 			} catch (SerialPortException ex){
 				Logger.getLogger(Ventana.class.getName()).log(Level.SEVERE, null, ex);
 			}
+			
 		}else
 			JOptionPane.showMessageDialog(null, "No hay texto para enviar", "LCD", 0);
 	}
-	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 			envia();	
@@ -139,23 +145,34 @@ public class Ventana extends JFrame implements ActionListener{
             }
 		}
 	}
+	
 	class Docummento extends DefaultStyledDocument{
 
 		private static final long serialVersionUID = 1L;
 		@Override
 		public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-			String text = getText(0, getLength());
-			if( (text.length()+1) <= 32 ){
+			if( !str.contains("\n")){
 				super.insertString(offs, str, a);
-				int car = txfMensaje.getDocument().getLength();
-				lblCaracteres.setText("Caracteres: "+(car)+" / 32");
-			}	
+			}
 		}
-		@Override
-		public void remove(int offs, int len) throws BadLocationException {
-			super.remove(offs, len);
-			int car = txfMensaje.getDocument().getLength();
-			lblCaracteres.setText("Caracteres: "+(car)+" / 32");
-		}
+	}
+	@Override
+	public void serialEvent(SerialPortEvent arg0) {
+		try {
+			if( arduino.isMessageAvailable() && algo){
+				txfMensaje.setEnabled(true);
+				btnEnviar.setEnabled(true);
+				lbtxtEnviado.setText("Texto enviado con exito!!!");
+			}
+		} catch (SerialPortException | ArduinoException e) {
+			e.printStackTrace();
+			lbtxtEnviado.setText("Fallo al enviar el texto");
+			txfMensaje.setEnabled(true);
+			btnEnviar.setEnabled(true);
+		}		
+	}
+	public static void main(String[] args) {
+		new Ventana();
+
 	}
 }
